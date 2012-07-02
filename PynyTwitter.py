@@ -177,10 +177,6 @@ class RequestBuilder:
 
 class PynyTwitterUI:
 	def __init(self):
-		consumer_key = "GGPaDs7LtZKgQWBjRb0QDQ"
-		access_token = "621112681-9DaE2R0LimseyIxI1bIf9r9YATOULTv4JrrGjdwm"
-		consumer_secret = "xBWGcLepjYEbjCpEBcv9UTfq2VgnNWENK89LEIe3dUg"
-		acess_secret = "OU8WIgv386ImkRaTvtx1OS5fX0UPiNuUubx6NnldvkI"
 		self.oauth = OAuthInfo(consumer_key, consumer_secret, access_token, acess_secret)
 
 	def get_timeline(self):

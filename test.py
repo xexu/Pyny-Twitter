@@ -6,8 +6,8 @@ class TestPynyTwitter(unittest.TestCase):
 	def setUp(self):
 		consumer_key = ""
 		access_token = ""
-		consumer_secret = "xBWGcLepjYEbjCpEBcv9UTfq2VgnNWENK89LEIe3dUg"
-		acess_secret = "OU8WIgv386ImkRaTvtx1OS5fX0UPiNuUubx6NnldvkI"
+		consumer_secret = ""
+		acess_secret = ""
 		self.oauth = OAuthInfo(consumer_key, consumer_secret, access_token, acess_secret)
 
 	def test_time_line(self):
