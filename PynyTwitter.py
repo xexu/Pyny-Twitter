@@ -17,6 +17,18 @@ class OAuthInfo:
 		self.Version = "1.0"
 		self.SignatureMethod = "HMAC-SHA1"
 
+
+	def __init__(self):
+		json_data = json.load(open("credentials.json"))
+		self.ConsumerKey = json_data["consumer_key"]
+		self.ConsumerSecret = json_data["consumer_secret"]
+		self.AccessToken = json_data["access_token"]
+		self.AcessSecret = json_data["acess_secret"]
+		self.Version = "1.0"
+		self.SignatureMethod = "HMAC-SHA1"
+
+
+
 class Tweet:
 	def __init__(self, user_name, screen_name, created_at, text):
 		self.user_name = user_name
@@ -24,59 +36,77 @@ class Tweet:
 		self.created_at = created_at
 		self.text = text
 
+
 	def format(self):
-		t = self.text + "\n" + self.screen_name + "\t" + self.created_at.strftime("%H:%M:%S %d/%m/%y")
-		return t
+		return self.text + "\n" + self.screen_name + "\t" + self.created_at.strftime("%H:%M:%S %d/%m/%y")
+
+
 
 class PynyTwitter:
-
 	def __init__(self, oauthinfo):
 		self.oauth = oauthinfo
 
 
-	def update_status(self, tweet):
-		pass
+	def update_status(self, status):
+		return self._update_status(status)
 
-	def time_line(self, sinceId = None, count = 20):
-		tweets = self._get_time_line("https://api.twitter.com/1/statuses/home_timeline.json", sinceId, count)
+
+	def home_timeline(self, count = 20, sinceId = None):
+		tweets = self._get_timeline("https://api.twitter.com/1/statuses/home_timeline.json", count, sinceId)
 		return tweets
-	
-	def _get_time_line(self, url, sinceId = None, count = 5):
+
+	def user_timeline(self, count = 20, sinceId = None):
+		tweets = self._get_timeline("https://api.twitter.com/1/statuses/user_timeline.json", count, sinceId)
+		return tweets
+
+
+	def _get_timeline(self, url, count = 20, sinceId = None):
 		builder = RequestBuilder(self.oauth, url, "GET")
 
 		if sinceId is not None:
-			builder.add_parameter("since_id", str(sinceId))
+			builder._add_parameter("since_id", str(sinceId))
 		if count is not None:
-			builder.add_parameter("count", str(count))
+			builder._add_parameter("count", str(count))
 
 		response = builder.execute()
 		tweets = builder._parse_json_response(response)
 		return tweets
 
 
-class RequestBuilder:
+	def _update_status(self, status):
+			builder = RequestBuilder(self.oauth,"https://api.twitter.com/1/statuses/update.json")
+			builder._add_parameter("status", status[:140])
+			response = builder.execute()
+			return response
 
+
+class RequestBuilder:
 	def __init__(self, oauthinfo, url, method = "POST"):
 		self.oauth = oauthinfo
 		self.method = method
 		self.url = url
 		self.custom_parameters = {}
+		self.oauth_parameters = {}
+
 
 	def execute(self):
 		timestamp = self._get_timestamp();
 		nonce = self._get_nonce()
-		request_url = self._get_request_url()
-
 		self._add_oauth_parameters(timestamp, nonce)
+
 		base_string = self._get_base_string()
-
 		signature = self._get_signature("&".join([self._encode(self.oauth.ConsumerSecret), self._encode(self.oauth.AcessSecret)]), base_string)
-		self.add_parameter("oauth_signature", signature)
-
+		self._add_oauth_parameter("oauth_signature", signature)
 		oauth_headers = self._build_oauth_headers()
 
+		request_url = self._get_request_url()
+		request_data = self._get_request_data()
 
-		httpRequest = urllib2.Request(request_url)
+		if request_data is None:
+			httpRequest = urllib2.Request(request_url)
+		else:
+			httpRequest = urllib2.Request(request_url, request_data)
+		
 		httpRequest.add_header("Authorization", oauth_headers)
 
 		# print base_string
@@ -95,9 +125,16 @@ class RequestBuilder:
 		try:
 			httpResponse = urllib2.urlopen(httpRequest)
 		except urllib2.HTTPError, e:
-			return "--Response Error: %s" % e
-
+			print "--Response Error: %s" % e
+			return None
 		return httpResponse
+
+
+	def _get_request_data(self):
+		if self.method == "GET":
+			return None
+		return urllib.urlencode(self.custom_parameters)
+
 
 	def _parse_json_response(self, response):
 		tweets = []
@@ -118,39 +155,42 @@ class RequestBuilder:
 				created_at = datetime.strptime(time_string, '%a %b %d %H:%M:%S %Y')
 				tweets.append(Tweet(user_name, screen_name, created_at, text))
 		return tweets
-				
 
 
-		return tweets
 	def _get_base_string(self):
 		params_list = []
-		for tup in self.custom_parameters.items():
-			params_list.append("=".join(tup))
+		for k, v in self.custom_parameters.items() + self.oauth_parameters.items():
+			params_list.append("=".join([self._encode(k), self._encode(v)]))
 		
 		items_list = [self.method, self._encode(self.url), self._encode("&".join(sorted(params_list)))]
 		base_string = "&".join(items_list)
 		return base_string
 
+
 	def _get_request_url(self):
 		if self.method != "GET" or self.custom_parameters.keys().count == 0:
 			return self.url
-		params_dict = {}
-		for k, v in self.custom_parameters.items():
-			params_dict[k] = v
-		return "?".join([self.url, urllib.urlencode(params_dict)])
+		return "?".join([self.url, urllib.urlencode(self.custom_parameters)])
 
 
 	def _add_oauth_parameters(self, timestamp, nonce):
-		self.add_parameter("oauth_consumer_key",self.oauth.ConsumerKey)
-		self.add_parameter("oauth_token",self.oauth.AccessToken)
-		self.add_parameter("oauth_version",self.oauth.Version)
-		self.add_parameter("oauth_nonce",str(nonce))
-		self.add_parameter("oauth_timestamp",str(timestamp))
-		self.add_parameter("oauth_signature_method",self.oauth.SignatureMethod)
+		self._add_oauth_parameter("oauth_consumer_key",self.oauth.ConsumerKey)
+		self._add_oauth_parameter("oauth_token",self.oauth.AccessToken)
+		self._add_oauth_parameter("oauth_version",self.oauth.Version)
+		self._add_oauth_parameter("oauth_nonce",str(nonce))
+		self._add_oauth_parameter("oauth_timestamp",str(timestamp))
+		self._add_oauth_parameter("oauth_signature_method",self.oauth.SignatureMethod)
+		return self
 
 
-	def add_parameter(self, key, value):
+	def _add_parameter(self, key, value):
 		self.custom_parameters[key] = value
+		return self
+
+
+	def _add_oauth_parameter(self, key, value):
+		self.oauth_parameters[key] = value
+		return self
 
 
 	def _get_signature(self,signingKey, stringToHash):
@@ -160,26 +200,29 @@ class RequestBuilder:
 
 	def _build_oauth_headers(self):
 		header_params = []
-		for k, v in self.custom_parameters.items():
-			if k.find("oauth_") != -1:
-				header_params.append("=".join([k, "\"" + self._encode(v) + "\""]))
+		for k, v in self.oauth_parameters.items():
+			header_params.append("=".join([k, "\"" + self._encode(v) + "\""]))
 		return "OAuth " + ",".join(sorted(header_params))
+
 
 	def _get_nonce(self):
 		return random.randint(1, 999999999)
 
+
 	def _get_timestamp(self):
 		return int(time.time())
+
 
 	def _encode(self,string):
 		return urllib.quote(string, safe="")
 
 
-class PynyTwitterUI:
-	def __init(self):
-		self.oauth = OAuthInfo(consumer_key, consumer_secret, access_token, acess_secret)
 
-	def get_timeline(self):
+class PynyTwitterUI:
+	def __init__(self):
+		self.oauth = OAuthInfo()
+
+	def get_home_timeline(self):
 		pyny = PynyTwitter(self.oauth)
-		for t in pyny.get_timeline():
+		for t in pyny.home_timeline():
 			print t.format()
