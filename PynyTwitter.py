@@ -46,6 +46,10 @@ class PynyTwitter:
 	def __init__(self, oauthinfo):
 		self.oauth = oauthinfo
 
+	def mentions(self, count = 20, sinceId = None):
+		tweets = self._get_timeline("https://api.twitter.com/1/statuses/mentions.json", count, sinceId)
+		return tweets
+
 
 	def update_status(self, status):
 		return self._update_status(status)
@@ -54,6 +58,7 @@ class PynyTwitter:
 	def home_timeline(self, count = 20, sinceId = None):
 		tweets = self._get_timeline("https://api.twitter.com/1/statuses/home_timeline.json", count, sinceId)
 		return tweets
+
 
 	def user_timeline(self, count = 20, sinceId = None):
 		tweets = self._get_timeline("https://api.twitter.com/1/statuses/user_timeline.json", count, sinceId)
@@ -77,7 +82,8 @@ class PynyTwitter:
 			builder = RequestBuilder(self.oauth,"https://api.twitter.com/1/statuses/update.json")
 			builder._add_parameter("status", status[:140])
 			response = builder.execute()
-			return response
+			return True
+
 
 
 class RequestBuilder:
@@ -221,8 +227,23 @@ class RequestBuilder:
 class PynyTwitterUI:
 	def __init__(self):
 		self.oauth = OAuthInfo()
+		self.pyny = PynyTwitter(self.oauth)
 
-	def get_home_timeline(self):
-		pyny = PynyTwitter(self.oauth)
-		for t in pyny.home_timeline():
+
+	def get_home_timeline(self,count=20):
+		for t in self.pyny.home_timeline(count):
 			print t.format()
+
+
+	def get_user_timeline(self,count=20):
+		for t in self.pyny.user_timeline(count):
+			print t.format()
+
+	def get_mentions(self):
+		for t in self.pyny.mentions():
+			print t.format()
+
+
+	def update_status(self, status):
+		if self.pyny.update_status(status):
+			print "Status Updated: " + status
