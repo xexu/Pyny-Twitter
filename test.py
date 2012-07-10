@@ -33,13 +33,13 @@ class TestPynyTwitter(unittest.TestCase):
 		tweets = self.pyny.mentions()
 		self.assertEqual(len(tweets), 1)
 
-	# def test_plainTextWriter_def(self): #prints to screen
+	# def test_plainTextWriter_stdout(self): #prints to screen
 	# 	w = PlainTextWriter()
 	# 	ui = PynyTwitterUI(w)
 	# 	ui.get_home_timeline()
 
 
-	def test_plainTextWriter_wipe_file_mode(self):
+	def test_plainTextWriter_file_wipe_mode(self):
 		f = "./log.txt"
 		open(f, "w").close()
 
@@ -55,7 +55,7 @@ class TestPynyTwitter(unittest.TestCase):
 		self.assertEqual(expected_lines, actual_lines)
 
 
-	def test_plainTextWriter_append_file_mode(self):
+	def test_plainTextWriter_file_append_mode(self):
 		f = "./log.txt"
 		open(f, "w").close()
 
@@ -69,6 +69,37 @@ class TestPynyTwitter(unittest.TestCase):
 		actual_lines = len(open(f, "r").readlines())
 
 		self.assertEqual(expected_lines, actual_lines)
+
+
+	def test_plainTextWriter_file_update_status(self):
+		n = random.randint(1, 999999999)
+		tweet_text = "this is a test-tweet rand=" + str(n)
+		f = "./log.txt"
+		open(f, "w").close()
+
+		w = PlainTextWriter(f, "w")
+		ui = PynyTwitterUI(w)
+		ui.update_status(tweet_text)
+		actual_lines = open(f, "r").readlines()
+
+		self.assertEqual(tweet_text, actual_lines[0])
+
+
+	def test_plainTextWriter_file_user_timeline_5(self):
+		f = "./log.txt"
+		open(f, "w").close()
+
+		count = 5
+		w = PlainTextWriter(f, "w")
+		ui = PynyTwitterUI(w)
+		ui.get_user_timeline(count)
+
+		expected_lines = 1 * 2 * count 
+		actual_lines = len(open(f, "r").readlines())
+
+		self.assertEqual(expected_lines, actual_lines)
+
+
 
 		
 if __name__ == '__main__':

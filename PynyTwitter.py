@@ -227,22 +227,20 @@ class PynyTwitterUI:
 
 
 	def get_home_timeline(self,count=20):
-		self.writer.write_timeline(self.pyny.home_timeline())
+		self.writer.write_timeline(self.pyny.home_timeline(count))
 
 
 	def get_user_timeline(self,count=20):
-		for t in self.pyny.user_timeline(count):
-			print t.format()
+		self.writer.write_timeline(self.pyny.user_timeline(count))
 
 
 	def get_mentions(self):
-		for t in self.pyny.mentions():
-			print t.format()
+		self.writer.write_timeline(self.pyny.mentions())
 
 
 	def update_status(self, status):
 		if self.pyny.update_status(status):
-			print "Status Updated: " + status
+			self.writer.write_status(status)
 
 
 
@@ -255,6 +253,9 @@ class PynyWriter:
 		raise NotImplementedError
 	def write_timeline(self, timeline):
 		raise NotImplementedError
+	def write_status(self, status):
+		raise NotImplementedError
+
 	def _open(self):
 		if self.file is not None:
 			if self.mode is not None:
@@ -279,6 +280,11 @@ class PlainTextWriter(PynyWriter):
 		self._open()
 		for t in timeline:
 			self._write_tweet(t)
+		self._close()
+
+	def write_status(self, status):
+		self._open()
+		self.output.write(status)
 		self._close()
 
 	def _write_tweet(self, tweet):
