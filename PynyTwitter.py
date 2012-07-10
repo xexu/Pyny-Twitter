@@ -7,6 +7,7 @@ import random
 import base64
 import json
 from datetime import datetime
+from sys import stdout
 
 class OAuthInfo:
 	def __init__(self, ConsumerKey, ConsumerSecret, AccessToken, AcessSecret):
@@ -35,12 +36,6 @@ class Tweet:
 		self.screen_name = screen_name
 		self.created_at = created_at
 		self.text = text
-
-
-	def format(self):
-		return self.text + "\n" + self.screen_name + "\t" + self.created_at.strftime("%H:%M:%S %d/%m/%y")
-
-
 
 class PynyTwitter:
 	def __init__(self, oauthinfo):
@@ -225,19 +220,20 @@ class RequestBuilder:
 
 
 class PynyTwitterUI:
-	def __init__(self):
+	def __init__(self, writer):
 		self.oauth = OAuthInfo()
 		self.pyny = PynyTwitter(self.oauth)
+		self.writer = writer
 
 
 	def get_home_timeline(self,count=20):
-		for t in self.pyny.home_timeline(count):
-			print t.format()
+		self.writer.write_timeline(self.pyny.home_timeline())
 
 
 	def get_user_timeline(self,count=20):
 		for t in self.pyny.user_timeline(count):
 			print t.format()
+
 
 	def get_mentions(self):
 		for t in self.pyny.mentions():
@@ -247,3 +243,44 @@ class PynyTwitterUI:
 	def update_status(self, status):
 		if self.pyny.update_status(status):
 			print "Status Updated: " + status
+
+
+
+class PynyWriter:
+	def __init__(self, file = None , mode = None):
+		self.file = file
+		self.mode = mode
+
+	def write_tweet(self, tweet):
+		raise NotImplementedError
+	def write_timeline(self, timeline):
+		raise NotImplementedError
+	def _open(self):
+		if self.file is not None:
+			if self.mode is not None:
+				self.output = open(self.file, self.mode)
+			else:
+				self.output = open(self.file, "w")
+		else:
+			self.output = stdout
+
+	def _close(self):
+		if self.output != stdout:
+			self.output.close()
+
+
+class PlainTextWriter(PynyWriter):
+	def write_tweet(self, tweet):
+		self._open()
+		self._write_tweet(tweet)
+		self._close()
+
+	def write_timeline(self, timeline):
+		self._open()
+		for t in timeline:
+			self._write_tweet(t)
+		self._close()
+
+	def _write_tweet(self, tweet):
+		text = tweet.text + "\n" + tweet.screen_name + "\t" + tweet.created_at.strftime("%H:%M:%S %d/%m/%y")+"\n"
+		self.output.write(text.encode("utf-8"))

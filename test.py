@@ -33,6 +33,43 @@ class TestPynyTwitter(unittest.TestCase):
 		tweets = self.pyny.mentions()
 		self.assertEqual(len(tweets), 1)
 
+	# def test_plainTextWriter_def(self): #prints to screen
+	# 	w = PlainTextWriter()
+	# 	ui = PynyTwitterUI(w)
+	# 	ui.get_home_timeline()
+
+
+	def test_plainTextWriter_wipe_file_mode(self):
+		f = "./log.txt"
+		open(f, "w").close()
+
+		times = 3
+		w = PlainTextWriter(f, "w")
+		ui = PynyTwitterUI(w)
+		for i in range(times):
+		 	ui.get_home_timeline()
+
+		expected_lines = 1 * 2 * 20 
+		actual_lines = len(open(f, "r").readlines())
+
+		self.assertEqual(expected_lines, actual_lines)
+
+
+	def test_plainTextWriter_append_file_mode(self):
+		f = "./log.txt"
+		open(f, "w").close()
+
+		times = 3
+		w = PlainTextWriter(f, "a")
+		ui = PynyTwitterUI(w)
+		for i in range(times):
+			ui.get_home_timeline()
+
+		expected_lines = times * 2 * 20
+		actual_lines = len(open(f, "r").readlines())
+
+		self.assertEqual(expected_lines, actual_lines)
+
 		
 if __name__ == '__main__':
     unittest.main()

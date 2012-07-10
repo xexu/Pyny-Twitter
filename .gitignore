@@ -1,3 +1,6 @@
+.credentials.json
+*.txt
+
 *.py[co]
 
 # Packages
@@ -12,7 +15,6 @@ var
 sdist
 develop-eggs
 .installed.cfg
-.credentials.json
 
 # Installer logs
 pip-log.txt
