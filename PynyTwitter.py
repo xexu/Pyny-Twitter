@@ -10,11 +10,11 @@ from datetime import datetime
 from sys import stdout
 
 class OAuthInfo:
-	def __init__(self, ConsumerKey, ConsumerSecret, AccessToken, AcessSecret):
+	def __init__(self, ConsumerKey, ConsumerSecret, AccessToken, AccessSecret):
 		self.ConsumerKey = ConsumerKey
 		self.ConsumerSecret = ConsumerSecret
 		self.AccessToken = AccessToken
-		self.AcessSecret = AcessSecret
+		self.AccessSecret = AccessSecret
 		self.Version = "1.0"
 		self.SignatureMethod = "HMAC-SHA1"
 
@@ -24,7 +24,7 @@ class OAuthInfo:
 		self.ConsumerKey = json_data["consumer_key"]
 		self.ConsumerSecret = json_data["consumer_secret"]
 		self.AccessToken = json_data["access_token"]
-		self.AcessSecret = json_data["acess_secret"]
+		self.AccessSecret = json_data["access_secret"]
 		self.Version = "1.0"
 		self.SignatureMethod = "HMAC-SHA1"
 
@@ -96,7 +96,7 @@ class RequestBuilder:
 		self._add_oauth_parameters(timestamp, nonce)
 
 		base_string = self._get_base_string()
-		signature = self._get_signature("&".join([self._encode(self.oauth.ConsumerSecret), self._encode(self.oauth.AcessSecret)]), base_string)
+		signature = self._get_signature("&".join([self._encode(self.oauth.ConsumerSecret), self._encode(self.oauth.AccessSecret)]), base_string)
 		self._add_oauth_parameter("oauth_signature", signature)
 		oauth_headers = self._build_oauth_headers()
 
@@ -115,7 +115,7 @@ class RequestBuilder:
 		# print self.oauth.ConsumerKey
 		# print self.oauth.ConsumerSecret
 		# print self.oauth.AccessToken
-		# print self.oauth.AcessSecret
+		# print self.oauth.AccessSecret
 		# print httpRequest.get_type()
 		# print httpRequest.get_full_url()
 		# print "-"*25
